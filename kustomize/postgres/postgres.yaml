@@ -13,11 +13,27 @@ spec:
         resources:
           requests:
             storage: 1Gi
+        selector:
+          matchLabels:
+            pgo-postgres-cluster: postgres-operator-hippo
+            
   backups:
     pgbackrest:
       image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.41-2
+      configuration:
+      - secret:
+          name: pgo-pgbackrest-creds
+      global:
+        repo1-retention-full: "14"
+        repo1-retention-full-type: time
+        repo2-path: /pgbackrest/postgres-operator/hippo/repo2
+        repo2-retention-full: "21"
+        repo2-retention-full-type: time
       repos:
       - name: repo1
+        schedules:
+          full: "0 1 * * 0"
+          differential: "0 1 * * 1-6"
         volume:
           volumeClaimSpec:
             accessModes:
@@ -25,3 +41,15 @@ spec:
             resources:
               requests:
                 storage: 1Gi
+      - name: repo2
+        s3:
+          bucket: hapflows-pgo-backups
+          endpoint: ams3.digitaloceanspaces.com
+          region: ams3
+        schedules:
+          full: "0 1 * * 0"
+          differential: "0 1 * * 1-6"
+      manual:
+        repoName: repo2
+        options:
+         - --type=full

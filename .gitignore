@@ -1,0 +1,3 @@
+.vscode
+.DS_Store
+kustomize/postgres/s3.conf
